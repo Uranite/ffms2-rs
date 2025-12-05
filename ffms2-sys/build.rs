@@ -35,12 +35,15 @@ fn main() {
             }
         }).expect("FFMS_LIB_DIR is not set or the specified directory is not valid.");
 
+        // Using dynamic library in Windows remains a problem. We have to copy the DLL into a path...
+        // Problem: If 'FFMS_LIB_DIR' is outside of 'target', it is not considered (https://doc.rust-lang.org/cargo/reference/environment-variables.html).
         // Only handle DLL copying for dynamic linking on Windows
         #[cfg(windows)]
         if !use_static {
             let cargo_output_dir = env::var("OUT_DIR").expect("Unable to get OUT_DIR");
             let linkable_dll: PathBuf = [cargo_output_dir.as_ref(), "..", "..", "..", "ffms2.dll"].iter().collect();
 
+            // Copy the file if it does not exists
             if !linkable_dll.is_file() {
                 let dll_file = lib_dir.as_path().join("ffms2.dll");
                 if !dll_file.is_file() {
@@ -51,7 +54,7 @@ fn main() {
             }
         }
 
-        // Add the flags for cargo
+        // Add the flags for cargo otherwise explicitely added by pkg-config-rs
         if use_static {
             println!("cargo:rustc-link-lib=static=ffms2");
         } else {
